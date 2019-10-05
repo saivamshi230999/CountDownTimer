@@ -1,11 +1,15 @@
 package com.example.countdowntimer;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
@@ -16,28 +20,33 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
+
+import static android.widget.Toast.LENGTH_LONG;
 
 public class MainActivity extends AppCompatActivity {
     private EditText mEditTextInput;
-    private TextView mTextViewCountDown;
+    private TextView mTextViewCountDown,tdate,tdate1;
     private Button mButtonSet;
     private Button mButtonStartPause;
     private Button mButtonReset;
     private Vibrator vib;
     private CountDownTimer mCountDownTimer;
-    private MediaPlayer mp;
+    private MediaPlayer mediaPlayer,mp;
     private boolean mTimerRunning;
 
     private long mStartTimeInMillis;
     private long mTimeLeftInMillis;
     private long mEndTime;
-
+    private Thread t;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        Thread t = new Thread() {
+        mp = MediaPlayer.create(this, Settings.System.DEFAULT_RINGTONE_URI);
+       t = new Thread() {
             @Override
             public void run() {
                 try {
@@ -46,10 +55,10 @@ public class MainActivity extends AppCompatActivity {
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                TextView tdate = (TextView) findViewById(R.id.date);
-                                long date = System.currentTimeMillis();
+                               tdate = findViewById(R.id.date);
+                                Calendar calendar = Calendar.getInstance();
                                 SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
-                                String dateString = sdf.format(date);
+                                String dateString = sdf.format(calendar.getTime());
                                 tdate.setText(dateString);
                             }
                         });
@@ -59,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         t.start();
+
         mEditTextInput = findViewById(R.id.edit_text_input);
         mTextViewCountDown = findViewById(R.id.text_view_countdown);
 
@@ -124,8 +134,34 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onFinish() {
                 mTimerRunning = false;
-                vib = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-                vib.vibrate(5000);
+                tdate1 = findViewById(R.id.date1);
+                AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+                Date date = new Date();
+                Calendar cal_alarm = Calendar.getInstance();
+                Calendar cal_now = Calendar.getInstance();
+                cal_now.setTime(date);
+                cal_alarm.setTime(date);
+
+                cal_alarm.set(Calendar.HOUR_OF_DAY,0);
+                cal_alarm.set(Calendar.MINUTE,0);
+                cal_alarm.set(Calendar.SECOND,0);
+                cal_alarm.setTimeInMillis(mEndTime);
+                Calendar calendar = Calendar.getInstance();
+                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+                String dateString = "Current IST: " + sdf.format(calendar.getTime());
+                tdate1.setText(dateString);
+
+               // startService(new Intent(MainActivity.this,MyService.class));
+                //mp.start();
+                Intent i = new Intent(MainActivity.this,MyBroadcastReceiver.class);
+                PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this,0,i,0);
+
+
+                    alarmManager.set(AlarmManager.RTC_WAKEUP,mEndTime,pendingIntent);
+                    Toast.makeText(MainActivity.this,"Counter", LENGTH_LONG).show();
+
+
+                tdate.setVisibility(View.VISIBLE);
                 updateWatchInterface();
             }
         }.start();
@@ -144,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
         mTimeLeftInMillis = mStartTimeInMillis;
         updateCountDownText();
         updateWatchInterface();
+       // stopService(new Intent(MainActivity.this,MyService.class));
     }
 
     private void updateCountDownText() {
@@ -166,10 +203,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateWatchInterface() {
+
         if (mTimerRunning) {
             mEditTextInput.setVisibility(View.INVISIBLE);
             mButtonSet.setVisibility(View.INVISIBLE);
             mButtonReset.setVisibility(View.INVISIBLE);
+
             mButtonStartPause.setText("Pause");
         } else {
             mEditTextInput.setVisibility(View.VISIBLE);
@@ -178,8 +217,10 @@ public class MainActivity extends AppCompatActivity {
 
             if (mTimeLeftInMillis < 1000) {
                 mButtonStartPause.setVisibility(View.INVISIBLE);
+
             } else {
                 mButtonStartPause.setVisibility(View.VISIBLE);
+
             }
 
             if (mTimeLeftInMillis < mStartTimeInMillis) {
@@ -201,6 +242,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        //stopService(new Intent(MainActivity.this,MyService.class));
 
         SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = prefs.edit();

@@ -12,6 +12,14 @@
         android:layout_centerHorizontal="true"
         android:textColor="@android:color/black"
         android:textSize="30sp" />
+    <TextView
+        android:layout_below="@+id/date"
+        android:layout_width="300dp"
+        android:id="@+id/date1"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textColor="@android:color/black"
+        android:textSize="25sp" />
     <EditText
         android:id="@+id/edit_text_input"
         android:layout_width="120dp"
