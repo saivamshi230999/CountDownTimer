@@ -23,8 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
-
-import static android.widget.Toast.LENGTH_LONG;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
     private EditText mEditTextInput;
@@ -36,9 +35,13 @@ public class MainActivity extends AppCompatActivity {
     private CountDownTimer mCountDownTimer;
     private MediaPlayer mediaPlayer,mp;
     private boolean mTimerRunning;
-
+    private long firstvalue;
     private long mStartTimeInMillis;
-    private long mTimeLeftInMillis;
+    private long mTimeLeftInMillis,leftout;
+
+    PendingIntent pendingIntent;
+    AlarmManager alarmManager;
+
     private long mEndTime;
     private Thread t;
     @Override
@@ -59,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
                                 Calendar calendar = Calendar.getInstance();
                                 SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
                                 String dateString = sdf.format(calendar.getTime());
-                                tdate.setText(dateString);
+                               // tdate.setText(dateString);
                             }
                         });
                     }
@@ -122,7 +125,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startTimer() {
-        mEndTime = System.currentTimeMillis() + mTimeLeftInMillis;
+     //   mEndTime = System.currentTimeMillis() + mTimeLeftInMillis;
+mEndTime = firstvalue+mTimeLeftInMillis;
 
         mCountDownTimer = new CountDownTimer(mTimeLeftInMillis, 1000) {
             @Override
@@ -135,31 +139,79 @@ public class MainActivity extends AppCompatActivity {
             public void onFinish() {
                 mTimerRunning = false;
                 tdate1 = findViewById(R.id.date1);
-                AlarmManager alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-                Date date = new Date();
-                Calendar cal_alarm = Calendar.getInstance();
-                Calendar cal_now = Calendar.getInstance();
-                cal_now.setTime(date);
-                cal_alarm.setTime(date);
+                alarmManager = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
 
-                cal_alarm.set(Calendar.HOUR_OF_DAY,0);
-                cal_alarm.set(Calendar.MINUTE,0);
-                cal_alarm.set(Calendar.SECOND,0);
-                cal_alarm.setTimeInMillis(mEndTime);
-                Calendar calendar = Calendar.getInstance();
-                SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
-                String dateString = "Current IST: " + sdf.format(calendar.getTime());
+               // SimpleDateFormat sdf = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
+                //String dateString = "Current IST: " + sdf.format(calendar.getTime());
+                TimeZone.setDefault(TimeZone.getTimeZone("IST"));
+                SimpleDateFormat f = new SimpleDateFormat("yyyy.MM.dd G 'at' HH:mm:ss z");
+              //  System.out.println(f.format(new Date()));
+                String dateString = "Current IST: " + f.format(new Date());
                 tdate1.setText(dateString);
 
-               // startService(new Intent(MainActivity.this,MyService.class));
-                //mp.start();
-                Intent i = new Intent(MainActivity.this,MyBroadcastReceiver.class);
-                PendingIntent pendingIntent = PendingIntent.getBroadcast(MainActivity.this,0,i,0);
 
 
-                    alarmManager.set(AlarmManager.RTC_WAKEUP,mEndTime,pendingIntent);
-                    Toast.makeText(MainActivity.this,"Counter", LENGTH_LONG).show();
+                long time;
 
+
+
+/*
+
+                    Toast.makeText(MainActivity.this, "ALARM ON", Toast.LENGTH_SHORT).show();
+                    Calendar calendar = Calendar.getInstance();
+                int sec,min,hour;
+                sec = (int) mEndTime/1000;
+                min = sec/60;
+                hour = min/60;
+                calendar.set(Calendar.HOUR_OF_DAY, hour);
+                calendar.set(Calendar.MINUTE, min);
+                calendar.set(Calendar.SECOND,sec );
+                    Intent intent = new Intent(MainActivity.this, AlarmReceiver.class);
+                    pendingIntent = PendingIntent.getBroadcast(MainActivity.this, 0, intent, 0);
+
+                    time=(calendar.getTimeInMillis()-(calendar.getTimeInMillis()%60000));
+                    if(System.currentTimeMillis()>time)
+                    {
+                        if (calendar.AM_PM == 0)
+                            time = time + (1000*60*60*12);
+                        else
+                            time = time + (1000*60*60*24);
+                    }
+                    alarmManager.set(AlarmManager.RTC_WAKEUP, time, pendingIntent);
+
+
+*/
+
+
+                    Toast.makeText(MainActivity.this, "Timer ON", Toast.LENGTH_SHORT).show();
+                    Calendar calendar = Calendar.getInstance();
+              /*      //Calendar calendar1 = Calendar.getInstance();
+                        int sec,min,hour;
+                        sec = (int) mEndTime/1000;
+                        min = sec/60;
+                        hour = min/60;
+                    calendar.set(Calendar.HOUR_OF_DAY, hour);
+                    calendar.set(Calendar.MINUTE, min);
+                    calendar.set(Calendar.SECOND,sec );
+                        //calendar.setTimeInMillis(mEndTime);
+                      //  time = (calendar.getTimeInMillis() - (calendar.setTimeInMillis()%6000)) ;*/
+                int hours1 = (int) (mEndTime / 1000) / 3600;
+                int minutes1 = (int) ((mEndTime / 1000) % 3600) / 60;
+                int seconds1 = (int) (mEndTime / 1000) % 60;
+                calendar.set(Calendar.HOUR_OF_DAY, hours1);
+                calendar.set(Calendar.MINUTE, minutes1);
+                calendar.set(Calendar.SECOND,seconds1 );
+                Intent intent = new Intent(MainActivity.this,AlarmReceiver.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                 pendingIntent = PendingIntent.getBroadcast(MainActivity.this,AlarmReceiver.REQUEST_CODE,intent,0);
+             //   time=(calendar.getTimeInMillis()-(calendar.getTimeInMillis()%60000));
+             // time = calendar.getTimeInMillis();
+                //  mEndTime = System.currentTimeMillis() + mTimeLeftInMillis;
+
+                long x  = mEndTime - 60000 ;
+                alarmManager.set(AlarmManager.RTC_WAKEUP,mEndTime, pendingIntent);
+              //  alarmManager.setRepeating(AlarmManager.RTC_WAKEUP,x, 60000,pendingIntent);
+              //  Toast.makeText(MainActivity.this, "Timer ON", Toast.LENGTH_SHORT).show();
 
                 tdate.setVisibility(View.VISIBLE);
                 updateWatchInterface();
@@ -264,7 +316,7 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
 
         SharedPreferences prefs = getSharedPreferences("prefs", MODE_PRIVATE);
-
+        firstvalue = System.currentTimeMillis();
         mStartTimeInMillis = prefs.getLong("startTimeInMillis", 600000);
         mTimeLeftInMillis = prefs.getLong("millisLeft", mStartTimeInMillis);
         mTimerRunning = prefs.getBoolean("timerRunning", false);
@@ -275,7 +327,7 @@ public class MainActivity extends AppCompatActivity {
         if (mTimerRunning) {
             mEndTime = prefs.getLong("endTime", 0);
             mTimeLeftInMillis = mEndTime - System.currentTimeMillis();
-
+             leftout   = mTimeLeftInMillis;
             if (mTimeLeftInMillis < 0) {
                 mTimeLeftInMillis = 0;
 
